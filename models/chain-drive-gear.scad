@@ -1,37 +1,75 @@
 PI = 3.141592653589793;
 
 beadDiameter = 3.8;
-beadDistance = 4.5;
-chainDiameter = 2.3;
+beadDistance = 4.3;
+chainDiameter = 2;
 beadsAlongGearDiameter = 36;
 
 motorShaftDiameter = 5;
 motorShaftSideInset = 1;
 
-edgeThickness = 2;
+edgeThickness = 1.5;
 
 circumference = beadsAlongGearDiameter*beadDistance;
-gearDiameter = circumference/(2*PI);
-beadAngle = beadDistance/(gearDiameter/2*(PI/180));
+chainPathDiameter = circumference/(2*PI);
+gearOuterDiameter = chainPathDiameter;
+beadAngle = beadDistance/(chainPathDiameter/2*(PI/180));
 totalThickness = beadDiameter+edgeThickness*2;
 
-echo ("gearDiameter", gearDiameter);
+echo ("chainPathDiameter", chainPathDiameter);
 
-difference() {
-	cylinder(totalThickness, gearDiameter/2, gearDiameter/2, $fn = 50);
-	translate([0,0,-1]) motorShaft(totalThickness+2, motorShaftDiameter, motorShaftSideInset, motorShaftSideInset);
-	translate([0,0,totalThickness/2]) beadChainCutout(gearDiameter, chainDiameter);
-	translate([0,0,totalThickness/2]) beadCutout(gearDiameter, beadDiameter, beadAngle);
+retainBoltDiameter = 3.2;
+retainExtra = 2;
+retainThickness = 2;
+retainTop = 4;
+retainWidth = 12;
+retainGap = beadDiameter/2;
+retainCutout = retainGap+gearOuterDiameter/2;
+retainHeight = gearOuterDiameter/2+retainBoltDiameter/2+retainExtra;
+retainTabLength = retainThickness+totalThickness;
+
+assembly();
+
+module print() {
+	gear();
+	translate([0, gearOuterDiameter/2 + 4]) chainRetainerExample();
+}
+
+module assembly() {
+	gear();
+	translate([0,-retainExtra-retainBoltDiameter/2,-retainThickness-0.1]) chainRetainerExample();
+}
+
+module gear() {
+	difference() {
+		cylinder(totalThickness, gearOuterDiameter/2, gearOuterDiameter/2, $fn = 50);
+		translate([0,0,-1]) motorShaft(totalThickness+2, motorShaftDiameter, motorShaftSideInset, motorShaftSideInset);
+		translate([0,0,totalThickness/2]) beadChainCutout(chainPathDiameter, chainDiameter);
+		translate([0,0,totalThickness/2]) beadCutout(chainPathDiameter, beadDiameter, beadAngle);
+	}
+}
+
+module chainRetainerExample() {
+	difference() {
+		union() {
+			translate([-retainWidth/2,0]) cube([retainWidth, retainTop+retainHeight+retainGap, retainTabLength]);
+		}
+
+	
+		translate([0,retainBoltDiameter/2+retainExtra,retainThickness]) cylinder(retainTabLength-retainThickness+1, retainCutout, retainCutout);
+
+		translate([0,retainBoltDiameter/2+retainExtra,-1]) cylinder(retainThickness+2, retainBoltDiameter/2, retainBoltDiameter/2);
+	}
 }
 
 module beadChainCutout(loopDiameter, chainDiameter) {
-	rotate_extrude(convexity = 4) translate([loopDiameter/2, 0, 0]) circle(r = chainDiameter/2);
+	rotate_extrude(convexity = 4) translate([loopDiameter/2, 0, 0]) circle(r = chainDiameter/2, $fn=5);
 }
 
 module beadCutout(loopDiameter, beadDiameter, beadAngle) {
 	union()
-	for(i = [0:360/beadAngle-1]) {
-		rotate(i*beadAngle, [0,0,1]) translate([loopDiameter/2,0]) sphere(beadDiameter/2);
+	for(i = [0:360/beadAngle]) {
+		rotate(i*beadAngle, [0,0,1]) translate([loopDiameter/2,0]) cylinder(beadDiameter, beadDiameter/2, beadDiameter/2, center = true, $fn=12);
 	}	
 }
 
