@@ -41,11 +41,12 @@ penClampExtra = 3;
 penClampHeight = 20;
 penClampWallThickness = 3;
 penClampBackingMinThickness = 2;
-penClampDimple = 5;
+penClampDimple = 3;
 penClampLength = penHoleSize+penClampWallThickness+penClampBackingMinThickness;
 penClampWidth = penHoleSize+penClampWallThickness*2;
+penClampBoltShift = penHoleSize/5;
 
-servoWidth = 25;
+servoWidth = 23.5;
 servoHeight = 26;
 servoThickness = 12.5;
 servoTabWidth = 5.3;
@@ -54,9 +55,9 @@ servoCutoutEdgeExtra = 4;
 servoMountCutoutHeight = 10;
 servoTabMountThickness = servoThickness;
 servoTabMountLength = servoMountCutoutHeight+servoTabDrop;
-servoMountScrewDiameter = 1.8;
+servoMountScrewDiameter = 2.1;
 servoMountScrewDepth = 10;
-servoMountScrewFromInside = 2.8;
+servoMountScrewFromInside = 2.65;
 
 
 
@@ -68,14 +69,14 @@ totalLength = baseLength+penClampLength;
 servoCutoutWidth = baseWidth-servoCutoutEdgeExtra*2-servoTabWidth*2;
 servoCutoutLength = servoHeight-servoCutoutEdgeExtra*2;
 
-frame();
+//frame();
 //chainAttach();
-//print();
+print();
 
 module print() {
 	frame();
-	translate([0,0,chainAttachTotalHeight]) rotate([0,180]) chainAttach();
-	#translate([-servoWidth/2, baseLength-servoHeight-servoMountCutoutHeight, baseThickness]) cube([servoWidth, servoHeight, servoThickness]);
+	translate([0,-chainAttachDiameter/2-chainClampBoltMountSideSpace,chainAttachTotalHeight]) rotate([0,180]) chainAttach();
+	//#translate([-servoWidth/2, baseLength-servoHeight-servoMountCutoutHeight, baseThickness]) cube([servoWidth, servoHeight, servoThickness]);
 }
 
 module chainAttach() {
@@ -101,27 +102,25 @@ module chainAttach() {
 module frame() {
 	difference() {
 		union() { 
-			supportArms();
-			attachPoint();
+			//supportArms();
+			translate([0,-chainAttachDiameter/2-chainClampBoltMountSideSpace]) attachPoint();
 			centerShape();
 		}
-		translate([0, baseLength+penClampBackingMinThickness, -1]) penClampShape(penHoleSize, penClampHeight+2, penClampDimple);
+		translate([0, penClampLength-penClampBackingMinThickness, -1]) rotate([0,0,180]) penClampShape(penHoleSize, penClampHeight+2, penClampDimple);
+		translate([0, -1, penClampHeight/2+penClampBoltShift]) rotate([-90,0]) cylinder(penClampWallThickness+2, penClampBoltDiameter/2, penClampBoltDiameter/2);
 		
-		translate([0, totalLength+1, penClampHeight/2]) rotate([90,0]) cylinder(penClampWallThickness+2, penClampBoltDiameter/2, penClampBoltDiameter/2);
-		
-		mirror([0,0,1]) counterSunkBolt(baseThickness-numSixCountersinkDepth, numSixCountersinkBoltSize, numSixCountersinkHeadDiameter, numSixCountersinkDepth);
 
-		translate([0, baseLength-servoMountCutoutHeight-servoCutoutLength/2-servoCutoutEdgeExtra, -1]) RoundedRect(servoCutoutWidth, servoCutoutLength, baseThickness+2, 2);
+		//translate([0, baseLength-servoMountCutoutHeight-servoCutoutLength/2-servoCutoutEdgeExtra, -1]) RoundedRect(servoCutoutWidth, servoCutoutLength, baseThickness+2, 2);
 	}
 }
 
 module centerShape() {
-	translate([-baseWidth/2, 0]) cube([baseWidth, baseLength-servoMountCutoutHeight, baseThickness]);
-	translate([-baseWidth/2, baseLength-servoTabMountLength]) servoAttachTab();
-	translate([baseWidth/2, baseLength-servoTabMountLength]) mirror([1,0]) servoAttachTab();
+	//translate([-baseWidth/2, 0]) cube([baseWidth, baseLength-servoMountCutoutHeight, baseThickness]);
+	translate([-baseWidth/2, penClampLength+servoTabMountLength]) mirror([0,1]) servoAttachTab();
+	mirror([1,0]) translate([-baseWidth/2, penClampLength+servoTabMountLength]) mirror([0,1]) servoAttachTab();
 
 	
-	translate([-baseWidth/2, baseLength]) linear_extrude(height = penClampHeight) assign(halfSize = (baseWidth-penClampWidth)/2) polygon([[0, 0], [baseWidth, 0], [baseWidth-halfSize, penClampLength], [halfSize, penClampLength]]);
+	translate([-baseWidth/2, 0]) linear_extrude(height = penClampHeight) assign(halfSize = (baseWidth-penClampWidth)/2) polygon([[0, penClampLength], [baseWidth, penClampLength], [baseWidth-halfSize, 0], [halfSize, 0]]);
 }
 
 module servoAttachTab() {
@@ -134,7 +133,14 @@ module servoAttachTab() {
 }
 
 module attachPoint() {
-	cylinder(baseThickness, chainClampAttachDiameter/2, chainClampAttachDiameter/2);
+	difference() {
+		union() {
+			cylinder(baseThickness, chainClampAttachDiameter/2, chainClampAttachDiameter/2);
+			translate([-chainAttachDiameter/2, 0]) cube([chainAttachDiameter, chainAttachDiameter/2+chainClampBoltMountSideSpace, baseThickness]);
+		}
+		
+		mirror([0,0,1]) counterSunkBolt(baseThickness-numSixCountersinkDepth, numSixCountersinkBoltSize, numSixCountersinkHeadDiameter, numSixCountersinkDepth);
+	}
 } 
 
 module supportArms() {
